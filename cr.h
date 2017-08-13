@@ -69,101 +69,13 @@ static ifstream in_stream;
 // output file stream
 static ofstream out_stream;	
 
-/*typedef struct Bfunction {
-	gsl_matrix * matrix; //original matrix
-	gsl_matrix * inverse; //inverse matrix
-	gsl_matrix * ludecomp; //LU decomposition
-	int size; //number of inputs
-	double det; // determinant
-	gsl_permutation * perm; // permutation matrix
-} Bfunction;
-*/
-typedef struct qGate
-{
-// number of input/output wires
-	int numIO;		
-	int realIO;		
-// cost of the gate
-	int Cost;		
-// representation
-	int representation;
-// matrix representing this gate
-	int *gateMatrix1;	
-//The String Name of this gate
-	string my_string;	
-	int valuedness;
-	int restrictions_number;
-	//specifies wich wires can be used as placement for this gate
-	int restrictions[MAXGATEINPUT];
-	int connections[MAXGATEINPUT];
-} qGate;
-
-typedef struct MCT {
-	short *controls;
-	short target;
-} MCT;
-
-typedef struct Kmap {
-//	gsl_matrix * function;
-	int inputs;
-} Kmap;
-
-
-typedef struct Mresult
-{
-	int results;
-//	gsl_matrix ** resulting_bfunctions;
-//	gsl_matrix ** resulting_inv_bfunctions;
-//	gsl_matrix ** resulting_bfunction_kmap;
-} Mresult;
-
-typedef struct result
-{
-	float avFitness [100000];
-	float avError[100000];
-	float avCost[100000];
-	int counter;
-	int step;
-} result;
-
-typedef struct pattern
-{
-	
-
-} pattern;
-
-typedef struct Solution
-{
-	int ioNumber;
-	float error;
-	float fitness;
-	float cost;
-	string my_string;
-} Solution;
-
-typedef struct Node
-{
-	char data;
-	int id,jd;
-	Node *left;
-	Node *right;
-} Node;
 
 void read_pla(string);
-int read_pla_file(const char*, int*, int**, int**);	
+int read_pla_file(std::ifstream&, int, int*, int**, int**);	
+int read_real_file(std::ifstream&, int, int*, int**, int**);
 void order_level_tree(int, int, int, int, int, int**, int, int**);
-int minimize_pla(int, int*, int***, int***, char**, char**);
-int decompose_pla_v(int, int, int*, int**, int**, int***, char**);
-int process_pla(int, int, int*, int**, int**, int*);
-int calculate_entropy(int, int**, int*, int*);
-int calculate_stats(int, int**, int*, int*);
-int row_swap(int, int**, int*, int*);
+void sift_pla(int, int, int*, int**, int**, int**, int*);
+void sift_real(int, int, int*, int**, int**, int**, int*, bool);
+
 int main(int, char**);
-int remove_top_bit_common(int, int***, int*, int*, char**);
-int get_top_bottom_cc(int, int*, int***, int***, int*, int*);
-int get_top_bottom_cc_two(int, int*, char**, int*, int*, int*);
-int merge_compat_cols(int, int*, int*, int***, char**);
-int merge_compat_cols_top_lvl(int, int, int*, int*, int*, int***, char**);
-int transform_tof_to_cvc(int, int, int*, int*, int*, int***, char**, char** );
-int reintr_dontcrs(int, int***, char**, int*, int*);
 
