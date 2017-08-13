@@ -53,6 +53,9 @@
 
 using namespace std;
 
+//debug flag
+const int DEBUG = 0;
+
 // Thread block size
 #define MAXGATEINPUT 20
 #define BLOCK_SIZE 2

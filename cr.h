@@ -30,6 +30,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <cmath>
 #include <time.h>
@@ -52,9 +53,6 @@
 //#include <gsl_linalg.h>
 
 using namespace std;
-
-//debug flag
-const int DEBUG = 0;
 
 // Thread block size
 #define MAXGATEINPUT 20

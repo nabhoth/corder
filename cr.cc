@@ -78,19 +78,139 @@ void order_level_tree(int level, int start, int levelcount, int input_counter, i
 }
 
 /*
+* Read the circuit specified in a .real file into array
+*/
+int read_real_file(ifstream& real_in_stream, int input_counter, int *inout, int **inputcubes, int **outputcubes){
+	int in, out, k, icounter, vcounter, vsize, incounter;
+	string line;
+	char **vars;
+	bool readd;
+	bool found;
+	char var[10];
+	
+	cout<<input_counter<<" inputs detected: "<<readd<<endl;
+	while(line[0] != '.'){
+		getline(real_in_stream,line);
+//		cout<< line<<"  "<<readd<<endl;
+	}
+	readd = false;
+	icounter = 0;
+	vcounter = 0;
+	incounter = 0;
+	while(line[0] != '.' || line[1] != 'e'){
+
+		if(line[0] == '.' && line[1] == 'n' && line[2] == 'u'){
+			string num = "";
+			k = 3;
+			while(line[k] != ' ') k++;
+			k++;
+			while(line[k] != '\0') num += line[k++];
+			in = atoi(num.c_str());
+			cout <<"in: "<< in<<"  variables"<<endl;
+			inout[0] = in;
+			inout[1] = in;
+			for (int y = 0; y < input_counter; y++){
+				inputcubes[y] = new int[inout[0]];
+				outputcubes[y] = new int[inout[0]];
+				for (int a = 0; a < inout[0];a++){
+					inputcubes[y][a] = 0;
+					outputcubes[y][a] = 0;
+				}
+			}
+/*			for (int a = 0; a < inout[0];a++){
+				for (int b = 0; b <input_counter; b++){
+		 			cout<<inputcubes[b][a]<<",";
+				}
+				cout<<endl;
+			}		
+			cout<<endl;
+
+			cout<<inout[0]<<endl;
+*/			vars = new char*[inout[0]];
+			for (int a =0; a<inout[0]; a++){
+				vars[a] = new char[20];
+			}
+		}
+
+		if(line[0] == '.' && line[1] == 'v' && line[2] == 'a'){
+			string num = "";
+			k = 3;
+			cout<<line<<endl;
+			while(line[k] != ' ')k++; 
+			while(line[k] == ' ')k++; 
+			icounter = 0;
+			while(line[k] != '\0') {
+				if(line[k] == ' ') {
+					vars[vcounter][icounter] = '\0';
+					icounter = 0;
+					vcounter++;
+				} else {
+					vars[vcounter][icounter++] = line[k];
+				}
+//			cout<<vars[vcounter][icounter]<<endl;
+				k++;
+			}
+			vars[vcounter][icounter] = '\0';
+		}
+		if (readd){
+//			cout<<line<<endl;
+			k = 0;
+			//skip the target indication
+			while(line[k] != ' ')k++;
+			k++;
+			vcounter = 0;
+			vsize = 0;
+			//while(line[k] != '\0') {
+			while(true) {
+				var[vcounter++] = line[k++];
+				vsize++;
+				if (line[k] == ' ' || line[k] == '\0'){
+					var[vcounter] ='\0';
+//					cout<<var<<"  ";
+					for (int p = 0; p < inout[0]; p++){
+						found = true;
+						for(int g = 0; g < vsize; g++){
+							if (var[g] != vars[p][g]) found = false;
+						}
+						if(found){
+//							cout<<"Found match: "<<incounter<<"  :: "<<vars[p]<<endl;
+							if (line[k] == '\0') {
+								inputcubes[incounter][p] = 3;
+							} else {
+								inputcubes[incounter][p] = 1;
+							}
+
+							break;
+						}
+					 
+					}
+					vsize = 0;
+					vcounter = 0;
+					if (line[k] == '\0') break;
+					k++;
+				}
+			}
+			incounter++;
+		}
+		if(line[0] == '.' && line[1] == 'b' && line[2]  == 'e'){
+			readd = true;
+			icounter = 0;
+		}
+		getline(real_in_stream,line);
+	}
+	return 1;
+}
+
+/*
 * Read the circuit specified in a .pla file into array
 */
 int read_pla_file(ifstream& pla_in_stream, int input_counter, int *inout, int **inputcubes, int **outputcubes){
 	int in, out, k, icounter;
 	string line;
-#ifdef DEBUG
 	cout<<input_counter<<" inputs detected"<<endl;
- #endif
 	while(line[0] != '.'){
 		getline(pla_in_stream,line);
-#ifdef DEBUG
 		cout<< line<<endl;
- #endif
 	}
 	icounter = 0;
 	while(line[0] != '.' || line[1] != 'e'){
@@ -99,9 +219,7 @@ int read_pla_file(ifstream& pla_in_stream, int input_counter, int *inout, int **
 			k = 3;
 			while(line[k] != '\0') num += line[k++];
 			in = atoi(num.c_str());
-#ifdef DEBUG
 			cout <<"in: "<< in<<"  "<<line<<endl;
- #endif
 			inout[0] = in;
 			for (int y = 0; y < input_counter; y++){
 				inputcubes[y] = new int[inout[0]];
@@ -113,9 +231,7 @@ int read_pla_file(ifstream& pla_in_stream, int input_counter, int *inout, int **
 			k = 3;
 			while(line[k] != '\0') num += line[k++];
 			out = atoi(num.c_str());
-#ifdef DEBUG
 			cout <<"out: "<< out<<"  "<<line<<endl;
- #endif
 			inout[1] = out;
 			for (int y = 0; y < input_counter; y++){
 				outputcubes[y] = new int[inout[1]];
@@ -150,9 +266,7 @@ int remove_top_bit_common(int count, int ***gatearray, int *down_controls, int *
 		int v = u-1;
 //		for(int v =u-1; v >= 0; v--){
 			if (gatearray[v][top_controls[v]][0] != -1 &&( down_controls[u] == top_controls[u] )){
-#ifdef DEBUG
 				cout <<"u,v: "<<u<<" - "<<v<<" :: "<< wirepcarray[v][gatearray[u][top_controls[u]][0]]<<" : "<<wirepcarray[u][gatearray[u][top_controls[u]][0]]<<endl;
- #endif
 				if (wirepcarray[v][gatearray[u][top_controls[u]][0]] == wirepcarray[u][gatearray[u][top_controls[u]][0]]){
 					wirepcarray[u][gatearray[u][top_controls[u]][1]] = '-';
 					gatearray[u][top_controls[u]][1] = -1;
@@ -166,128 +280,88 @@ int remove_top_bit_common(int count, int ***gatearray, int *down_controls, int *
 
 int get_top_bottom_cc(int input_counter, int *inout, int ***cgatearray, int ***gatearray, int *top_controls, int *down_controls){
 	int count = 0;
-#ifdef DEBUG
 	cout<<" up: ";
- #endif
 	for(int u =0; u < (input_counter*2); u=u+2){
 		for(int o =0; o < (inout[0]*2); o++){ 
 			if (cgatearray[u][o][0] != -1 && cgatearray[u][o][0] != -10){
 				top_controls[count++] = o;
-#ifdef DEBUG
 				cout<<top_controls[count-1]<<", ";
- #endif
 				break;
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	count = 0;
-#ifdef DEBUG
 	cout<<" down : ";
- #endif
 	for(int u =0; u < (input_counter*2); u++){
 		for(int o = (inout[0]*2)-1; o>=1; o--){ 
 			if (gatearray[u][o][0] > -1 && o > 1){
 				down_controls[count++] = o;
-#ifdef DEBUG
 				cout<<down_controls[count-1]<<", ";
- #endif
 				break;
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	return count;
 
 }
 
 int get_top_bottom_cc_two(int input_counter, int *inout, char **wirepcarray, int ***gatearray, int *top_controls, int *down_controls){
 	int count = 0;
-#ifdef DEBUG
 	cout<<" up: ";
- #endif
 	for(int u =0; u < input_counter; u++){
 		for(int o =0; o < inout[0]*2; o++){ 
 			if (wirepcarray[u][o] != '-'){
 				top_controls[count++] = o;
-#ifdef DEBUG
 				cout<<top_controls[count-1]<<", ";
- #endif
 				break;
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	count = 0;
-#ifdef DEBUG
 	cout<<" down : ";
- #endif
 	for(int u =0; u < input_counter; u++){
 		for(int o = (inout[0]*2)-1; o>=0; o--){ 
 			if (wirepcarray[u][o] != '-' ){
 				down_controls[count++] = o;
-#ifdef DEBUG
 				cout<<down_controls[count-1]<<", ";
- #endif
 				break;
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
-#ifdef DEBUG
 	cout<<"final count: "<<count<<endl;
- #endif
 	return count;
 
 }
 int get_top_bottom_cc_cv(int input_counter, int *inout, char **wirepcarray, int ***gatearray, int *top_controls, int *down_controls){
 	int count = 0;
-#ifdef DEBUG
 	cout<<" up: ";
- #endif
 	for(int u =0; u < input_counter*4; u++){
 		for(int o =0; o < inout[0]*2; o++){ 
 			if (wirepcarray[u][o] != '-'){
 				top_controls[count++] = o;
-#ifdef DEBUG
 				cout<<top_controls[count-1]<<", ";
- #endif
 				break;
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	count = 0;
-#ifdef DEBUG
 	cout<<" down : ";
- #endif
 	for(int u =0; u < input_counter*4; u++){
 		for(int o = (inout[0]*2)-1; o>=0; o--){ 
 			if (wirepcarray[u][o] != '-' ){
 				down_controls[count++] = o;
-#ifdef DEBUG
 				cout<<down_controls[count-1]<<", ";
- #endif
 				break;
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
-#ifdef DEBUG
 	cout<<"final count: "<<count<<endl;
- #endif
 	return count;
 
 }
@@ -301,9 +375,7 @@ int merge_compat_cols(int count, int *down_controls, int *top_controls, int ***g
 
 		for(int u = count-1;u>0; u--){
 				if ((down_controls[u] == down_controls[u-1]) && (top_controls[u] - down_controls[u] < 2) && (top_controls[u-1] < top_controls[u])){
-#ifdef DEBUG
 					cout<<"controls: "<<u<<" : "<<down_controls[u]<<" -> "<<(u-1)<<" : "<<down_controls[u-1]<<endl;
- #endif
 						wirepcarray[u][down_controls[u]] = '-';
 						wirepcarray[u][top_controls[u]] = '-';
 						wirepcarray[u-1][down_controls[u]] = '-';
@@ -332,9 +404,7 @@ int merge_compat_cols(int count, int *down_controls, int *top_controls, int ***g
 					}
 				}
 		}
-#ifdef DEBUG
 cout<<"aggregating\n";
- #endif
 
 
 //		for(int u = 0;u<count; u++){
@@ -346,9 +416,7 @@ cout<<"aggregating\n";
 						column=true;
 					} 
 				}
-#ifdef DEBUG
 				cout<<v<<" "<<column<<" "<<last<<endl;
- #endif
 				if (column && last >  -1){
 					for (int w=0;w<down_controls[v];w++){
 						wirepcarray[last][w] = wirepcarray[v][w];
@@ -388,9 +456,7 @@ int minimize_cvc_pla(int count, int input_counter, int ***gatearray, int *inout,
 			i++;
 			j=i+1;
 		} else if (down_controls[i] == down_controls[j] && top_controls[i]==top_controls[j]){
-#ifdef DEBUG
 			cout<<down_controls[i]<<" "<<down_controls[j]<<"  "<<top_controls[i]<<"  "<<top_controls[j]<<endl;
- #endif
 			i++;
 			j=i+1;
 			total+=2;
@@ -407,17 +473,13 @@ int minimize_cvc_pla(int count, int input_counter, int ***gatearray, int *inout,
 		 }
 
 	}
-#ifdef DEBUG
 	cout<<" Found total of: "<<total<<" replacable gates "<<endl;
- #endif
 }
 
 /* merge compatible columns when being on the highest level*/
 int transform_tof_to_cvc(int count, int input_counter, int *inout, int *down_controls, int *top_controls, int ***gatearray, char **wirepcarray, char **wirecvcarray ){
 	int subcount, current, top,down,target;
-#ifdef DEBUG
 	cout<<"Transforming to CVC!!!!! with count: "<<count<<endl;
- #endif
 	current = 0;
 	for(int u = 0;u<count; u++){
 		subcount = 0;
@@ -512,9 +574,7 @@ int merge_compat_cols_top_lvl(int count, int input_counter, int *inout, int *dow
 
 				if ((down_controls[u+1] == down_controls[u]) && (top_controls[u+1] == top_controls[u]) && (top_controls[u] == down_controls[u+1]) && (wirepcarray[u][gatearray[u][down_controls[u]][0]] == wirepcarray[u+1][gatearray[u+1][down_controls[u+1]][0]]) && (wirepcarray[u][gatearray[u][down_controls[u]][1]] == wirepcarray[u+1][gatearray[u+1][down_controls[u]][1]])){
 //						&& (gatearray[u+1][down_controls[u+1]][0] == gatearray[u][down_controls[u]][0]) && (gatearray[u+1][down_controls[u+1]][1] == gatearray[u][down_controls[u]][1])){
-#ifdef DEBUG
 					cout<<"controls: "<<u<<" : "<<down_controls[u]<<" -> "<<(u+1)<<" : "<<down_controls[u+1]<<endl;
- #endif
 						wirepcarray[u+1][gatearray[u+1][down_controls[u+1]][0]] = '-';
 						wirepcarray[u][gatearray[u][down_controls[u]][1]] = '-';
 						wirepcarray[u][gatearray[u][down_controls[u]][0]] = '-';
@@ -576,9 +636,7 @@ int reintr_dontcrs(int count, int ***gatearray, char **wirepcarray, int *top_con
 		for(int u =1; u < count; u++){
 			int v = u-1;
 			if (gatearray[v][top_controls[v]][0] != -1 &&( down_controls[u] == top_controls[u] )){
-#ifdef DEBUG
 				cout <<"u,v: "<<u<<" - "<<v<<" :: "<< wirepcarray[v][gatearray[u][top_controls[u]][0]]<<" : "<<wirepcarray[u][gatearray[u][top_controls[u]][0]]<<endl;
- #endif
 				if (wirepcarray[v][gatearray[u][top_controls[u]][0]] == wirepcarray[u][gatearray[u][top_controls[u]][0]]){
 					wirepcarray[u][gatearray[u][top_controls[u]][1]] = '-';
 					gatearray[u][top_controls[u]][1] = -1;
@@ -597,17 +655,11 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<wirepcarray[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 
 
@@ -619,52 +671,32 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 /*	for(int o =0; o < (inout[0]*2); o++){ 
 		for(int u =0; u < input_counter*2; u++){
 			if (gatearray[u][o][0] == -1 || o == 1){
-#ifdef DEBUG
 				cout<<"{  ,  }";
- #endif
 			} else {
 				if (gatearray[u][o][0] >= 10){
-#ifdef DEBUG
 					cout<<"{"<<gatearray[u][o][0]<<",";
- #endif
 				} else if (gatearray[u][o][0] < 10){
-#ifdef DEBUG
 					cout<<"{ "<<gatearray[u][o][0]<<",";
- #endif
 				}
 
 				if (gatearray[u][o][1] >= 10){
-#ifdef DEBUG
 					cout<<gatearray[u][o][1]<<"}";
- #endif
 				}  else if (gatearray[u][o][1] < 10){
-#ifdef DEBUG
 					cout<<" "<<gatearray[u][o][1]<<"}";
- #endif
 				}
 			}
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 */
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<wirepcarray[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 	
 	int level = inout[0]*2-1;
@@ -677,17 +709,11 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<wirepcarray[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 		/*determine the bottom- and top-most  non-don't care control bits*/
 		count = get_top_bottom_cc_two(input_counter, inout, wirepcarray, gatearray, top_controls, down_controls);
@@ -699,54 +725,34 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 /*		for(int o =0; o < (inout[0]*2); o++){ 
 			for(int u =0; u < input_counter*2; u++){
 				if (gatearray[u][o][0] == -1 || o == 1){
-#ifdef DEBUG
 					cout<<"{  ,  }";
- #endif
 				} else {
 					if (gatearray[u][o][0] >= 10){
-#ifdef DEBUG
 						cout<<"{"<<gatearray[u][o][0]<<",";
- #endif
 					} else if (gatearray[u][o][0] < 10){
-#ifdef DEBUG
 						cout<<"{ "<<gatearray[u][o][0]<<",";
- #endif
 					}
 
 					if (gatearray[u][o][1] >= 10){
-#ifdef DEBUG
 						cout<<gatearray[u][o][1]<<"}";
- #endif
 					}  else if (gatearray[u][o][1] < 10){
-#ifdef DEBUG
 						cout<<" "<<gatearray[u][o][1]<<"}";
- #endif
 					}
 				}
 			}
-#ifdef DEBUG
 			cout<<endl;
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 
 
 
 		for(int o =0; o < inout[0]*2; o++){ 
 			for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 				cout<<wirepcarray[u][o]<<", ";
- #endif
 			}
-#ifdef DEBUG
 			cout<<endl;
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 */
 
 		c++;
@@ -765,17 +771,11 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 /*
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter*8; u++){
-#ifdef DEBUG
 			cout<<wirecvcarray[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 */
 	minimize_cvc_pla(count, input_counter, gatearray, inout, wirecvcarray);
@@ -794,9 +794,7 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 
 
@@ -814,16 +812,379 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 			}
 		}
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 
 
 	return count;
 }
+/***************************************
+* Calculates the number of required swap gates for each gate with 
+* continuous changes in variable order
+****************************************/
 
 
+/***************************************
+* sifts the circuit according to the analytic method
+* by calculating each cost of gate w.r.t. to target qubit - value 3
+****************************************/
+void sift_pla2(int full, int input_counter, int *inout, int **inputcubes, int **outputcubes, int **var_order, int *result, bool exact){
+	int counter, tocount, ocounter, m, bestsum;
+	int level, icountindex, gatecost, ancilla, twobitg, threebitg, dcarecount, gatecostmin;
+	int target;
+	int cube_counter;
+	int tem;
+	int *temp;
+	int *mccs;
+	int *qws;
+	int *best_var_order;
+	int *last_var_order;
+	int *runn_var_order;
+	int *reorder_array[inout[0]];
+	int *inputOcubes[input_counter*4];
+	int *outputOcubes[input_counter*4];
+	short *wirearray[input_counter];
+
+	best_var_order = new int[inout[0]];
+	last_var_order = new int[inout[0]];
+	runn_var_order = new int[inout[0]];
+	for (int p = 0; p < inout[0]; p++){
+		best_var_order[p] = (*var_order)[p];
+		last_var_order[p] = (*var_order)[p];
+		runn_var_order[p] = (*var_order)[p];
+	}
+	qws = new int[inout[0]];
+
+	for (int x = 0; x < (inout[0]); x++){
+		reorder_array[x] = new int[input_counter*4];
+	}
+	for (int y = 0; y < input_counter; y++){
+		wirearray[y] = new short[inout[0]];
+	}
+	for (int y = 0; y < input_counter*4; y++){
+		inputOcubes[y] = new int[inout[0]];
+		for (int x = 0; x < inout[0]; x++){
+			inputOcubes[y][x] = 0;
+		}
+		outputOcubes[y] = new int[inout[1]];
+		for (int x = 0; x < inout[1]; x++){
+			outputOcubes[y][x] = 0;
+		}
+	}
+
+
+
+	for(int u =0; u < input_counter; u++){
+		for(int o =0; o < inout[0]; o++) wirearray[u][o] = inputcubes[u][o];
+	}
+
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			reorder_array[o][u] = wirearray[u][o];
+		}
+	}
+
+
+	//function representation output
+	cout<<"---------------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<wirearray[u][o]<<", ";
+		}
+		cout<<endl;
+	}
+
+	cout<<"---------------------------"<<endl;
+
+/*	//function representation output
+	cout<<"Original------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<reorder_array[o][u]<<", ";
+		}
+		cout<<endl;
+	}
+	cout<<"---------------------------"<<endl;
+*/
+
+	//calculate the QWS once for all
+//	cout<<"QWSs:\n";
+	for(int o =0; o < inout[0]; o++){ 
+		qws[o] = 0;
+		for(int u =0; u < input_counter; u++){
+			if (reorder_array[o][u]> 0) qws[o]++;
+		}
+//		cout<<"Qubit "<<o<<" :"<<qws[o]<<endl;
+	}
+
+		for (int p = 0; p < inout[0]; p++){
+			cout<<" wire/cost: "<<(*var_order)[p]<<"/"<<qws[p];
+		}
+		cout<<endl;
+	cout<<endl;
+
+
+//	cout<<"MCCs:\n";
+	mccs = new int[input_counter];
+	int sum = 0;
+	for(int u = 0; u<input_counter; u++){
+		for (int o =0; o<inout[0]; o++){
+			if (reorder_array[o][u] > 0){
+				target = o;
+			}
+		}
+		mccs[u] = 0;
+		//For each qubit that needs to be moved reorder the array into LNN arrangment
+		for(int o =0; o<inout[0]; o++){ 
+			if (reorder_array[o][u]> 0) {
+				//find a whole in the bits
+				for (int j = o; j < target; j++){
+//				cout<<" tar: "<<target<<" arr: "<<j ;
+					if (reorder_array[j][u] == 0){
+						mccs[u] += abs(j-o);
+//						cout<<endl<<" diff: "<<(j-o)<<endl;
+
+						temp = reorder_array[o];
+						reorder_array[o] = reorder_array[j];
+						reorder_array[j] = temp;
+						
+//						cout<<endl<<" diff: "<<(j-o)<<endl;
+						tem = qws[o];
+						qws[o] = qws[j];
+						qws[j] = tem;
+						
+//						cout<<endl<<" diff: "<<(j-o)<<endl;
+						tem = runn_var_order[o];
+						runn_var_order[o] = runn_var_order[j];
+						runn_var_order[j] = tem;
+//						cout<<endl<<" diff: "<<(j-o)<<endl;
+						break;
+					}
+				}
+//				cout<<endl;
+			}
+		}
+		sum += mccs[u];
+	}
+	bestsum = sum;
+
+	//function representation output
+	cout<<"1--------------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<reorder_array[o][u]<<", ";
+		}
+		cout<<endl;
+	}
+	cout<<"---------------------------"<<endl;
+
+
+	cout<<"Minterm sum :"<<sum;
+	cout<<endl;
+
+
+	//reorder to the initial order
+	for (int p = 0; p < inout[0]; p++){
+		while (runn_var_order[p] != p){
+			temp = reorder_array[runn_var_order[p]];
+			reorder_array[runn_var_order[p]] = reorder_array[p];
+			reorder_array[p] = temp;
+
+			tem = qws[runn_var_order[p]];
+			qws[runn_var_order[p]] = qws[p];
+			qws[p] = tem;
+
+			tem = runn_var_order[p];
+			runn_var_order[p] = runn_var_order[tem];
+			runn_var_order[tem] = tem;
+		}
+	}
+	//function representation output
+	cout<<"2--------------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<reorder_array[o][u]<<", ";
+		}
+		cout<<endl;
+	}
+	cout<<"---------------------------"<<endl;
+
+
+
+
+
+	/* Main routine */
+	for(int o =0; o < inout[0]; o++){ 
+		/* Reorder the qubits one at the time*/
+		for(int p =o+1; p < inout[0]; p++){ 
+			if (qws[o] > qws [p]){
+				temp = reorder_array[p];
+				reorder_array[p] = reorder_array[o];
+				reorder_array[o] = temp;
+
+				tem = qws[p];
+				qws[p] = qws[o];
+				qws[o] = tem;
+
+				tem = last_var_order[p];
+				last_var_order[p] = last_var_order[o];
+				last_var_order[o] = tem;
+			}		
+		}
+	//function representation output
+	cout<<"3--------------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<reorder_array[o][u]<<", ";
+		}
+		cout<<endl;
+	}
+
+		//recalculate the cost in SWAP gates
+		mccs = new int[input_counter];
+		sum = 0;
+		for(int u = 0; u<input_counter; u++){
+			for (int o =0; o<inout[0]; o++){
+				if (reorder_array[o][u]> 0){
+					target = o;
+				}
+			}
+			mccs[u] = 0;
+
+			//For each qubit that needs to be moved reorder the array into LNN arrangment
+			for(int o =0; o<inout[0]; o++){ 
+				if (reorder_array[o][u]> 0) {
+					//find a whole in the bits
+					for (int j = o; j < target; j++){
+						if (reorder_array[j][u] == 0){
+//				cout<<" tar: "<<o<<" arr: "<<j<<endl ;
+							mccs[u] += abs(j-o);
+//							cout<<endl<<" row: "<<u<<" diff: "<<(j-o)<<endl;
+							
+							temp = reorder_array[o];
+							reorder_array[o] = reorder_array[j];
+							reorder_array[j] = temp;
+											
+
+///						cout<<endl<<" diff: "<<(j-o)<<endl;
+							tem = qws[o];
+							qws[o] = qws[j];
+							qws[j] = tem;
+						
+							tem = runn_var_order[o];
+							runn_var_order[o] = runn_var_order[j];
+							runn_var_order[j] = tem;
+							break;
+						}
+					}
+				}
+			}
+	//function representation output
+/*	cout<<"3.5------------------------"<<endl;
+	for(int m =0; m < inout[0]; m++){ 
+		for(int n =0; n < input_counter; n++){
+			cout<<reorder_array[m][n]<<", ";
+		}
+		cout<<endl;
+	}
+*/	cout<<endl;
+	cout<<" Sum: "<<mccs[u]<<endl;
+
+		sum += mccs[u];
+		}
+		if (sum < bestsum){
+			for (int o =0; o<inout[0]; o++){
+				best_var_order[o] = last_var_order[o];
+				bestsum = sum;
+			}
+		}
+	//function representation output
+/*	cout<<"4--------------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<reorder_array[o][u]<<", ";
+		}
+		cout<<endl;
+	}
+
+	cout<<" Sum: "<<sum<<endl;
+*/
+		//Reorder the qubits to the last_var_order
+		for (int p = 0; p < inout[0]; p++){
+			if (last_var_order[p] != runn_var_order[p]){
+				for (int q = p; q < inout[0]; q++){
+					if (last_var_order[q] == runn_var_order[p]){
+						temp = reorder_array[runn_var_order[q]];
+						reorder_array[runn_var_order[q]] = reorder_array[p];
+						reorder_array[p] = temp;
+						
+						tem = qws[runn_var_order[q]];
+						qws[runn_var_order[q]] = qws[p];
+						qws[p] = tem;
+						
+						tem = runn_var_order[q];
+						runn_var_order[p] = runn_var_order[q];
+						runn_var_order[q] = tem;
+					}
+				}
+			}
+		}
+	}
+
+	for (int p = 0; p < inout[0]; p++){
+		while (last_var_order[p] != p){
+			temp = reorder_array[last_var_order[p]];
+			reorder_array[last_var_order[p]] = reorder_array[p];
+			reorder_array[p] = temp;
+
+			tem = last_var_order[p];
+			last_var_order[p] = last_var_order[tem];
+			last_var_order[tem] = tem;
+		}
+	}
+
+	for (int p = 0; p < inout[0]; p++){
+		(*var_order)[p] = best_var_order[p];
+	}
+
+	for(int o =0; o < inout[0]; o++){ 
+		if (best_var_order[o] != o){
+			for(int u =0; u < input_counter; u++){
+				wirearray[u][o] = reorder_array[best_var_order[o]][u];
+			}
+		}
+	}
+
+	//function representation output
+	cout<<"Best----------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<wirearray[u][o]<<", ";
+		}
+		cout<<endl;
+	}
+	cout<<"---------------------------"<<endl;
+/*	//function representation output
+	cout<<"R--------------------------"<<endl;
+	for(int o =0; o < inout[0]; o++){ 
+		for(int u =0; u < input_counter; u++){
+			cout<<reorder_array[o][u]<<", ";
+		}
+		cout<<endl;
+	}
+*/
+	cout<<"---------------------------"<<endl;
+
+	cout<<" Best Sum: "<<bestsum<<endl;
+	cout<<" Best order: ";
+	for (int i = 0;i <inout[0];i++)
+		cout<<best_var_order[i]<<", ";
+	cout<<endl;
+	cout<<"---------------------------"<<endl;
+
+//	exit(0);
+	result[0] = bestsum;
+}
 /***************************************
 * parameter full 
 * full = 0 the pla is a completely specified Multi-input multi-output reversible function
@@ -832,67 +1193,31 @@ int minimize_pla(int input_counter, int *inout, int ***gatearray, int ***cgatear
 * full = 3  multi-input and single output function that requires embedding
 ****************************************/
 void sift_pla(int full, int input_counter, int *inout, int **inputcubes, int **outputcubes, int **var_order, int *result){
-	int input_index, output_index, counter, tocount, ocounter, m;
+	int counter, tocount, ocounter, m;
 	int level, icountindex, gatecost, ancilla, twobitg, threebitg, dcarecount, gatecostmin;
-	int c1, c2, target;
+	int target;
+	int bestsum;
 	int cube_counter;
 	int *mccs;
 	int *qws;
 	int *reorder_array[inout[0]];
 	int *inputOcubes[input_counter*4];
 	int *outputOcubes[input_counter*4];
-	float gatearray[input_counter*4];
-	float controlcounter[input_counter*4];
 	short *wirearray[input_counter*4];
-	int *wireIarray[input_counter*4];
-	char *wireCarray[input_counter*4];
-	char *wirePCarray[input_counter*4];
-	char *wireCVCarray[input_counter*50];
-	char **finalwirePCarray[input_counter*4];
-	char *finalarray[input_counter*4];
-	int **finalgatearray[input_counter*4];
-	int **finalCgatearray[input_counter*4];
-//	string *wireSarray[input_counter*4];
-	bool different[input_counter*4];
-	int top_controls[input_counter*4];
-	bool bottom;
-	char variables[input_counter*4];
-	short ancillas[input_counter*4];
-	char r = 'r';
 
 	for (int x = 0; x < (inout[0]); x++){
 		reorder_array[x] = new int[input_counter*4];
 	}
-
-	for (int y = 0; y < input_counter*20; y++)
-		wireCVCarray[y] = new char[inout[0]*2];
 	for (int y = 0; y < input_counter*4; y++){
-		inputOcubes[y] = new int[inout[0]];
-		for (int x = 0; x < inout[0]; x++)
-			inputOcubes[y][x] = 0;
 		wirearray[y] = new short[inout[0]];
-		wireIarray[y] = new int[inout[0]];
-		wireCarray[y] = new char[inout[0]];
-		wirePCarray[y] = new char[inout[0]*2];
-		finalarray[y] = new char[inout[0]*2];
-//		wireSarray[y] = new string[inout[0]];
-		finalgatearray[y] = new int*[inout[0]*2];
-		finalCgatearray[y] = new int*[inout[0]*2];
-		for (int x = 0; x < (inout[0]*2); x++){
-			finalgatearray[y][x] = new int[2];
-			finalgatearray[y][x][0] = -1;
-			finalgatearray[y][x][1] = -1;
-			finalCgatearray[y][x] = new int[4];
-			finalCgatearray[y][x][0] = -10;
-			finalCgatearray[y][x][1] = -10;
-			finalCgatearray[y][x][2] = -10;
-			finalCgatearray[y][x][3] = -10;
+		inputOcubes[y] = new int[inout[0]];
+		for (int x = 0; x < inout[0]; x++){
+			inputOcubes[y][x] = 0;
 		}
-	}
-	for (int y = 0; y < input_counter*4; y++){
 		outputOcubes[y] = new int[inout[1]];
-		for (int x = 0; x < inout[1]; x++)
+		for (int x = 0; x < inout[1]; x++){
 			outputOcubes[y][x] = 0;
+		}
 	}
 
 
@@ -1005,25 +1330,15 @@ void sift_pla(int full, int input_counter, int *inout, int **inputcubes, int **o
 		else if (inputOcubes[m][inout[0]-1] ==0)
 			wirearray[m][inout[0]-1] = 2;
 
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	//function representation output
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<wirearray[u][o]<<", ";
- #endif
-			wireCarray[u][o] = '-';
-			wirePCarray[u][o] = '-';
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 	for(int o =0; o < inout[0]; o++){ 
 		for(int u =0; u < input_counter; u++){
@@ -1031,9 +1346,7 @@ void sift_pla(int full, int input_counter, int *inout, int **inputcubes, int **o
 		}
 	}
 
-#ifdef DEBUG
 	cout<<"MCCs:\n";
- #endif
 	mccs = new int[input_counter];
 	int sum = 0;
 	for(int u = 0; u<input_counter; u++){
@@ -1047,12 +1360,10 @@ void sift_pla(int full, int input_counter, int *inout, int **inputcubes, int **o
 		}
 		sum += mccs[u];
 	}
-	
-#ifdef DEBUG
+	bestsum = sum;	
 	cout<<"Minterm sum :"<<sum;
 	cout<<endl;
 	cout<<"QWSs:\n";
- #endif
 	qws = new int[inout[0]];
 	for(int o =0; o < inout[0]; o++){ 
 		qws[o] = 0;
@@ -1065,14 +1376,14 @@ void sift_pla(int full, int input_counter, int *inout, int **inputcubes, int **o
 	/* Reorder the qubits */
 	int *temp;
 	int tem;
-#ifdef DEBUG
 cout<<" address: "<<var_order<<"  "<<*var_order<<endl<<endl;;
+
 		for (int p = 0; p < inout[0]; p++){
 			cout<<" wire/cost: "<<(*var_order)[p]<<"/"<<qws[p];
 		}
+
 		cout<<endl;
 	cout<<endl;
- #endif
 
 	for(int o =0; o < inout[0]; o++){ 
 		for(int p =o+1; p < inout[0]; p++){ 
@@ -1110,10 +1421,11 @@ cout<<" address: "<<var_order<<"  "<<*var_order<<endl<<endl;;
 //	cout<<"Minterm sum :"<<sum;
 //	cout<<endl;
 
+	if (bestsum > sum){
+		bestsum = sum;
 	}
-#ifdef DEBUG
+	}
 	cout<<"MCCs:\n";
- #endif
 	mccs = new int[input_counter];
 	sum = 0;
 	for(int u = 0; u<input_counter; u++){
@@ -1127,16 +1439,21 @@ cout<<" address: "<<var_order<<"  "<<*var_order<<endl<<endl;;
 		}
 		sum += mccs[u];
 	}
-#ifdef DEBUG
-	cout<<"Minterm sum :"<<sum;
-	cout<<endl;
-		for (int p = 0; p < inout[0]; p++){
-			cout<<" wire/cost: "<<(*var_order)[p]<<"/"<<qws[p];
-		}
-		cout<<endl;
-	cout<<endl;
- #endif
+//	cout<<"Minterm sum :"<<sum;
+//	cout<<endl;
 
+//		for (int p = 0; p < inout[0]; p++){
+//			cout<<" wire/cost: "<<(*var_order)[p]<<"/"<<qws[p];
+//		}
+//
+//		cout<<endl;
+//	cout<<endl;
+
+	if (bestsum > sum){
+		bestsum = sum;
+	}
+
+	result[0] = bestsum;
 }
 
 
@@ -1319,25 +1636,17 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		else if (inputOcubes[m][inout[0]-1] ==0)
 			wirearray[m][inout[0]-1] = 2;
 
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	//function representation output
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<wirearray[u][o]<<", ";
- #endif
 			wireCarray[u][o] = '-';
 			wirePCarray[u][o] = '-';
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 
 	for(int o =0; o < inout[0]*2; o++){ 
@@ -1381,17 +1690,11 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 	//function representation output
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<wireCarray[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 */
 	/* Copy wireCarray to wirePCarray - having all ancila bits */
 	for(int o =0; o < inout[0]; o++){ 
@@ -1401,7 +1704,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 			wirePCarray[u][o*2+1] = '-';
 	}
 
-#ifdef DEBUG
 	cout<<endl;
 	//function representation output
 	for(int o =0; o < inout[0]*2; o++){ 
@@ -1411,7 +1713,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		cout<<endl;
 	}
 	cout<<endl;
- #endif
 
 	
 	/* remove don't cares/ reduce table only if the specification does not contain don't cares*/
@@ -1455,7 +1756,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 //			wirePCarray[u][o*2+1] = '-';
 	}
 
-#ifdef DEBUG
 	//function representation output
 	for(int o =0; o < inout[0]; o++){ 
 		for(int u =0; u < input_counter; u++){
@@ -1464,7 +1764,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		cout<<endl;
 	}
 	cout<<endl;
- #endif
 
 	/* Copy the resulting circuit to a final data structure by skipping don't cares*/
 	for(int u =0; u < input_counter; u++){
@@ -1523,9 +1822,7 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 			if (finalgatearray[m][counter][0] > -1 && finalgatearray[m][counter][1] > -1 ){
 				if (finalgatearray[m][counter][0] == finalgatearray[m-1][counter][0] && finalgatearray[m][counter][1] == finalgatearray[m-1][counter][1]){
 					if (wirePCarray[m][finalgatearray[m][counter][0]] == wirePCarray[m-1][finalgatearray[m-1][counter][0]] && wirePCarray[m][finalgatearray[m][counter][1]] == wirePCarray[m-1][finalgatearray[m-1][counter][1]] ){
-#ifdef DEBUG
 				cout<<"got one: "<<finalgatearray[m][counter][0]<<", "<<finalgatearray[m-1][counter][0]<<"; "<<finalgatearray[m][counter][1]<<", "<<finalgatearray[m-1][counter][1] <<endl;
- #endif
 						wirePCarray[m][finalgatearray[m][counter][0]] = '-';
 						wirePCarray[m][finalgatearray[m][counter][1]] = '-';
 						finalgatearray[m][counter][0]  = -1;
@@ -1571,18 +1868,13 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 
 
 /*		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<tops[u]<<" ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 
 
 	
 */	}
-#ifdef DEBUG
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
 			cout<<wirePCarray[u][o]<<", ";
@@ -1590,7 +1882,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		cout<<endl;
 	}
 	cout<<endl;
- #endif
 //	cout<<endl;
 
 	for(int u =0; u < input_counter; u++){
@@ -1602,12 +1893,11 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		}
 	}
 
-#ifdef DEBUG
 	for(int u =0; u < input_counter; u++){
+//		if (
 		cout<<tops[u]<<" ";
 	}
 	cout<<endl;
- #endif
 
 
 
@@ -1684,7 +1974,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 			}
 		}
 	}
-#ifdef DEBUG
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
 			cout<<wirePCarray[u][o]<<", ";
@@ -1693,76 +1982,48 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 	}
 	cout<<endl;
 	cout<<endl;
- #endif
 
 	/*print the encoded cubesa*/
 /*	for(int o =0; o < inout[0]; o++){ 
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			cout<<inputOcubes[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
 	for(int u =0; u < input_counter; u++)cout<<"....";
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	for(int o =0; o < inout[1]; o++){
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			 cout<<outputOcubes[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 */
 	/*print the reduced circuit*/
 /*	for(int o =0; o < (inout[0]*2); o++){ 
 		for(int u =0; u < input_counter; u++){
 			if (finalgatearray[u][o][0] == -1 || o == 1){
-#ifdef DEBUG
 				cout<<"{  ,  }";
- #endif
 			} else {
 				if (finalgatearray[u][o][0] >= 10){
-#ifdef DEBUG
 					cout<<"{"<<finalgatearray[u][o][0]<<",";
- #endif
 				} else if (finalgatearray[u][o][0] < 10){
-#ifdef DEBUG
 					cout<<"{ "<<finalgatearray[u][o][0]<<",";
- #endif
 				}
 
 				if (finalgatearray[u][o][1] >= 10){
-#ifdef DEBUG
 					cout<<finalgatearray[u][o][1]<<"}";
- #endif
 				}  else if (finalgatearray[u][o][1] < 10){
-#ifdef DEBUG
 					cout<<" "<<finalgatearray[u][o][1]<<"}";
- #endif
 				}
 			}
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
 
-#ifdef DEBUG
 	cout<<endl;
- #endif
 */	//function representation output
-#ifdef DEBUG
 	for(int o =0; o < inout[0]*2; o++){ 
 		for(int u =0; u < input_counter; u++){
 			cout<<wirePCarray[u][o]<<", ";
@@ -1771,7 +2032,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 	}
 	cout<<endl;
 	cout<<endl;
- #endif
 
 //exit(0);
 
@@ -1780,7 +2040,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 
 //exit(0);
 	/*print the minimized circuit*/
-#ifdef DEBUG
 	for(int o =0; o < (inout[0]*2); o++){ 
 		for(int u =0; u < input_counter*2; u++){
 			if (finalgatearray[u][o][0] == -1 || o == 1){
@@ -1802,8 +2061,6 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		cout<<endl;
 	}
 		cout<<endl;
- #endif
-#ifdef DEBUG
 
 	//function representation output
 	for(int o =0; o < inout[0]*2; o++){ 
@@ -1813,28 +2070,19 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		cout<<endl;
 	}
 	cout<<endl;
- #endif
 
 
 
 /*
 	for(int u =0; u < input_counter; u++)cout<<"....";
-#ifdef DEBUG
 	cout<<endl;
- #endif
 	for(int o =0; o < inout[1]; o++){
 		for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 			 cout<<outputOcubes[u][o]<<", ";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 	cout<<endl;
- #endif
 
 */
 
@@ -1842,78 +2090,48 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 	for(int o =0; o < (inout[0]*2); o++){ 
 		for(int u =0; u < (input_counter*2); u++){
 			if (finalgatearray[u][o][0] == -1 || o == 1){
-#ifdef DEBUG
 				cout<<"{  ,  }";
- #endif
 			} else {
 				if (finalgatearray[u][o][0] >= 10){
-#ifdef DEBUG
 					cout<<"{"<<finalgatearray[u][o][0]<<",";
- #endif
 				} else if (finalgatearray[u][o][0] < 10){
-#ifdef DEBUG
 					cout<<"{ "<<finalgatearray[u][o][0]<<",";
- #endif
 				}
 
 				if (finalgatearray[u][o][1] >= 10){
-#ifdef DEBUG
 					cout<<finalgatearray[u][o][1]<<"}";
- #endif
 				}  else if (finalgatearray[u][o][1] < 10){
-#ifdef DEBUG
 					cout<<" "<<finalgatearray[u][o][1]<<"}";
- #endif
 				}
 			}
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
 	
-#ifdef DEBUG
 		cout<<endl;
- #endif
-#ifdef DEBUG
 		cout<<endl;
- #endif
 
 
 	for(int o =0; o < (inout[0]*2); o++){ 
 		for(int u =0; u < (input_counter*2); u++){
 			if (finalCgatearray[u][o][0] == -10 || finalCgatearray[u][o][0] == -1 || o == 1){
-#ifdef DEBUG
 				cout<<"{  ,  }";
- #endif
 			} else {
 				if (finalCgatearray[u][o][0] >= 10){
-#ifdef DEBUG
 					cout<<"{"<<finalCgatearray[u][o][0]<<",";
- #endif
 				} else if (finalCgatearray[u][o][0] < 10){
-#ifdef DEBUG
 					cout<<"{ "<<finalCgatearray[u][o][0]<<",";
- #endif
 				}
 				if (finalCgatearray[u][o][2] >= 10){
-#ifdef DEBUG
 					cout<<finalCgatearray[u][o][2]<<"}";
- #endif
 				}  else if (finalCgatearray[u][o][2] < 10){
-#ifdef DEBUG
 					cout<<" "<<finalCgatearray[u][o][2]<<"}";
- #endif
 				}
 			}
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 */
 	//count number of toffolis from finalCgatearray
 	gatecost = 0;
@@ -1927,15 +2145,11 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 				counter++;
 				if (finalgatearray[u][o][1] == -1){
 				//if (finalCgatearray[u][o][0] >= finalCgatearray[u][o][2]){
-#ifdef DEBUG
 					cout<<"{"<<finalgatearray[u][o][0]<<","<<finalgatearray[u][o][1]<<"}";
- #endif
 					twobitg++;
 					gatecost += 1;
 				} else {
-#ifdef DEBUG
 					cout<<"{"<<finalgatearray[u][o][0]<<","<<finalgatearray[u][o][1]<<"}";
- #endif
 					threebitg++;
 					gatecost += 5;
 				}
@@ -2012,12 +2226,8 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		}
 	}
 /*	cout<<" Total cost of the circuit (using approximate naive counting) is: "<<gatecost<<endl;
-#ifdef DEBUG
 	cout<<" Total number of two bit gates is: "<<twobitg<<endl;
- #endif
-#ifdef DEBUG
 	cout<<" Total number of three bit gates is: "<<threebitg<<endl;
- #endif
 */
 /*
 	for(int u =2; u < (input_counter*2); u=u+2)
@@ -2031,12 +2241,8 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 
 */
 /*	cout<<" Total cost of the circuit (using approximate naive counting) is: "<<gatecost<<endl;
-#ifdef DEBUG
 	cout<<" Total number of two bit gates is: "<<twobitg<<endl;
- #endif
-#ifdef DEBUG
 	cout<<" Total number of three bit gates is: "<<threebitg<<endl;
- #endif
 */
 	//calculate how many gates must be repeated - to restore ancilla bits
 /*	for (int a = 0; a < input_counter; a++){
@@ -2145,21 +2351,13 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 	}
 	for(int o =0; o < (inout[0]); o++){ 
 		for(int u =0; u < (input_counter); u++){
-#ifdef DEBUG
 			cout<<"{ "<<wireCarray[u][o]<<"}";
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 
-#ifdef DEBUG
 		cout<<endl;
- #endif
 	//count the number of Toffolis
 	gatecost = 0;
 	twobitg = 0;
@@ -2230,15 +2428,9 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 
 		}
 
-#ifdef DEBUG
 	cout<<" Total cost of the circuit (using approximate counting) is: "<<gatecost<<endl;
- #endif
-#ifdef DEBUG
 	cout<<" Total number of two bit gates is: "<<twobitg<<endl;
- #endif
-#ifdef DEBUG
 	cout<<" Total number of three bit gates is: "<<threebitg<<endl;
- #endif
 */
 //	cout<<endl;
 /*	for(int u =0; u < (input_counter*2); u++){
@@ -2257,11 +2449,9 @@ int process_pla(int full, int input_counter, int *inout, int **inputcubes, int *
 		}
 	}
 */
-#ifdef DEBUG
 	cout<<" Total cost of the circuit (after minimization) is: "<<gatecost<<endl;
 	cout<<" Total number of two bit function gates is: "<<(twobitg)<<endl;
 	cout<<" Total number of three bit gates is: "<<(threebitg)<<endl;
- #endif
 
 	for (int y = 0; y < input_counter*4; y++){
 		delete inputOcubes[y];
@@ -2337,8 +2527,10 @@ int main(int argc, char *argv[]){
 	int rand0, rand1;
 	int inout[2];
 	int input_counter = 0;
+	int real_counter = 0;
 	int **inputcubes;
 	int **outputcubes;
+	int **realcubes;
 	int **inputcubes_for_process;
 	int **outputcubes_for_process;
 	int *variable_order;
@@ -2348,39 +2540,59 @@ int main(int argc, char *argv[]){
 	int *result;
 	int best_cost = 1000000;
 	int cost = best_cost + 1;
-	ifstream pla_in_stream;
+	ifstream in_stream;
 	string line;
 
 
-	if (argc < 2) {cout<<"File argument needed"<<endl; exit(0);}
-	pla_in_stream.open(argv[1]);	
-	getline(pla_in_stream,line);
-	
-	while(line[0] != '.'){
-		getline(pla_in_stream,line);
-	}
-	while(!pla_in_stream.eof()){
-		if(line[0] == '.' && line[1] == 'i' && line[2] == ' '){
+	if (argc < 3) {cout<<"File argument needed"<<endl; exit(0);}
 
+	if (argv[2] == 0){
+		in_stream.open(argv[1]);	
+		getline(in_stream,line);
+		while(line[0] != '.'){
+			getline(in_stream,line);
 		}
-		if(line[0] == '.' && line[1] == 'o' && line[2] == ' '){
-		} else if(line[0] == '0' || line[0] == '1' || line[0]  == '-'){
-			input_counter++;
+		while(!in_stream.eof()){
+			if(line[0] == '.' && line[1] == 'i' && line[2] == ' '){
+			}
+			if(line[0] == '.' && line[1] == 'o' && line[2] == ' '){
+			} else if(line[0] == '0' || line[0] == '1' || line[0]  == '-'){
+				input_counter++;
+			}
+			getline(in_stream,line);
 		}
-		getline(pla_in_stream,line);
+	} else {
+		in_stream.open(argv[1]);	
+		getline(in_stream,line);
+		while(line[0] != '.'){
+			getline(in_stream,line);
+		}
+		while(!in_stream.eof()){
+//			cout<<line<<endl;
+			if(line[0] == '.'){
+			} else {
+				input_counter++;
+			}
+			getline(in_stream,line);
+		}
 	}
-
 
 	inputcubes = new int*[input_counter];
 	outputcubes = new int*[input_counter];
 	inputcubes_for_process = new int*[input_counter];
 	outputcubes_for_process = new int*[input_counter];
 	result = new int[3];
-
-	pla_in_stream.clear();              // forget we hit the end of file
-	pla_in_stream.seekg(0, ios::beg);   // move to the start of the file
-	read_pla_file(pla_in_stream, input_counter, inout, inputcubes, outputcubes);
-	pla_in_stream.close();
+	if (argv[2][0] == '0') {
+		in_stream.clear();              // forget we hit the end of file
+		in_stream.seekg(0, ios::beg);   // move to the start of the file
+		read_pla_file(in_stream, input_counter, inout, inputcubes, outputcubes);
+	} else {
+		in_stream.clear();              // forget we hit the end of file
+		in_stream.seekg(0, ios::beg);   // move to the start of the file
+		read_real_file(in_stream, input_counter, inout, inputcubes, outputcubes);
+	}
+	
+	in_stream.close();
 
 	variable_order = new int[inout[0]];
 	best_order = new int[inout[0]];
@@ -2395,68 +2607,51 @@ int main(int argc, char *argv[]){
 		best_order[y] = variable_order[y];
 	}
 
-#ifdef DEBUG
 	cout<<"Function name: "<<argv[1]<<endl;
- #endif
 	//test for various input variable permutations
 	for (int a = 0; a <1; a++){
-	//for (int a = 0; a <input_counter*inout[0]; a++){
+//for (int a = 0; a <input_counter*inout[0]; a++){
 	//for (int a = 0; a <1; a++){
 
-		//copy the data to array used for p@rocessing the input data
+		//copy the data to array used for processing the input data
 		for (int y = 0; y < input_counter; y++){
 			for(int o =0; o < inout[0]; o++)
 				inputcubes_for_process[y][o] = inputcubes[y][o];
 			for(int o =0; o < inout[1]; o++)
 				outputcubes_for_process[y][o] = outputcubes[y][o];
 		}
-/*
-#ifdef DEBUG
-		cout<<" input data "<<endl;
- #endif
+
+/*		cout<<" input data "<<endl;
 		for(int o =0; o < inout[0]; o++){ 
 			for(int u =0; u < input_counter; u++){
 				if (inputcubes[u][o] == -1)
-#ifdef DEBUG
 					cout<<"2, ";
- #endif
 				else
-#ifdef DEBUG
 					cout<<inputcubes[u][o]<<", ";
- #endif
 			}
-#ifdef DEBUG
 			cout<<endl;
- #endif
 		}
 		for(int u =0; u < input_counter; u++)cout<<"...";
-#ifdef DEBUG
 		cout<<endl;
- #endif
 		for(int o =0; o < inout[1]; o++){
 			for(int u =0; u < input_counter; u++){
-#ifdef DEBUG
 				 cout<<outputcubes[u][o]<<", ";
- #endif
 			}
-#ifdef DEBUG
 			cout<<endl;
- #endif
 		}
-#ifdef DEBUG
 		cout<<endl;
- #endif
 */
 /*		cout<<"Ordering of the variables: ";
 		for (int y = 0; y < inout[0]; y++)
-#ifdef DEBUG
 			cout<<variable_order[y]<<" ";
- #endif
-#ifdef DEBUG
 		cout<<endl;
- #endif
 */
-		sift_pla(0, input_counter, inout, inputcubes_for_process, outputcubes_for_process, &variable_order, result);
+		if (argv[2][0] == '0'){
+			sift_pla(0, input_counter, inout, inputcubes_for_process, outputcubes_for_process, &variable_order, result);
+		} else {
+			sift_pla2(0, input_counter, inout, inputcubes_for_process, outputcubes_for_process, &variable_order, result, true);
+		}
+
 		if (cost < best_cost){
 			best_cost = result[0];
 			best_threebit = result[1];
@@ -2464,30 +2659,25 @@ int main(int argc, char *argv[]){
 			for (int h = 0; h < inout[0]; h++)
 				best_order[h] = variable_order[h];
 
-#ifdef DEBUG
 			cout<<"---------- Best So Far ----------"<<endl;
 			cout<<"Best Cost of the Circuit: "<<best_cost<<endl;
 			cout<<"Number of Three bit gates: "<<best_threebit<<endl;
 			cout<<"Number of Two bit gates: "<<best_twobit<<endl;
- #endif
 
 		}
 //		row_swap(input_counter, inputcubes, inout, variable_order);
 	}
 
-#ifdef DEBUG
 	cout<<"---------- Best Results ----------"<<endl;
 	cout<<"Function name: "<<argv[1]<<endl;
 	cout<<"Best Cost of the Circuit: "<<best_cost<<endl;
 	cout<<"Number of Three bit gates: "<<best_threebit<<endl;
 	cout<<"Number of Two bit gates: "<<best_twobit<<endl;
 	cout<<"Ordering of the variables: ";
- #endif
 	for (int y = 0; y < inout[0]; y++)
 		cout<<variable_order[y]<<" ";
 	cout<<endl;
-#ifdef DEBUG
+	cout<<"Best Cost of SWAP gates: "<<result[0]<<endl;
 	cout<<"---------- Best Results ----------"<<endl;
- #endif
 return 0;
 }
